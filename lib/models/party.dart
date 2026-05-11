@@ -5,6 +5,7 @@ enum PaymentType { due, interest }
 
 class Party {
   final String id;
+  final String? companyId;
   final String name;
   final double principal;
   final double interestPercent;
@@ -21,6 +22,7 @@ class Party {
 
   Party({
     required this.id,
+    this.companyId,
     required this.name,
     required this.principal,
     required this.interestPercent,
@@ -41,9 +43,11 @@ class Party {
     int? numberOfDues,
     int? durationDays,
     DateTime? startDate,
+    String? companyId,
   }) {
     return Party(
       id: const Uuid().v4(),
+      companyId: companyId,
       name: name,
       principal: principal,
       interestPercent: interestPercent,
@@ -88,6 +92,7 @@ class Party {
   factory Party.fromJson(Map<String, dynamic> json) {
     return Party(
       id: json['id'],
+      companyId: json['company_id'],
       name: json['name'],
       principal: (json['principal'] as num).toDouble(),
       interestPercent: (json['interest_percent'] as num).toDouble(),
@@ -107,10 +112,11 @@ class Party {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'company_id': companyId,
       'name': name,
       'principal': principal,
       'interest_percent': interestPercent,
-      'duration': durationDays,
+      'duration': durationDays ?? 0,
       'number_of_dues': numberOfDues,
       'payment_type': paymentType.name,
       'collection_type': collectionType.name,

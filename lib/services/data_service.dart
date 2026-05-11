@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
+import '../models/company.dart';
 import '../models/party.dart';
 import '../models/payment.dart';
 
@@ -10,16 +12,53 @@ class DataService {
 
   final SupabaseClient _client = Supabase.instance.client;
 
+  // --- Companies ---
+
+  Future<List<Company>> getCompanies() async {
+    try {
+      final response = await _client
+          .from(AppConstants.tblCompanies)
+          .select()
+          .order('created_at');
+      final data = response as List<dynamic>;
+      return data.map((e) => Company.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint("Error fetching companies from DB: $e");
+      return [];
+    }
+  }
+
+  Future<void> addCompany(Company company) async {
+    await _client.from(AppConstants.tblCompanies).insert(company.toJson());
+  }
+
+  Future<void> updateCompany(Company company) async {
+    await _client
+        .from(AppConstants.tblCompanies)
+        .update(company.toJson())
+        .eq('id', company.id);
+  }
+
   // --- Parties ---
 
-  Future<List<Party>> getParties() async {
-    final response = await _client
-        .from(AppConstants.tblParties)
-        .select()
-        .order('created_at');
-    
-    final data = response as List<dynamic>;
-    return data.map((e) => Party.fromJson(e)).toList();
+  Future<List<Party>> getParties([String? companyId]) async {
+    try {
+      var query = _client.from(AppConstants.tblParties).select();
+      if (companyId != null) {
+        query = query.eq('company_id', companyId);
+      }
+      final response = await query.order('created_at');
+      final data = response as List<dynamic>;
+      return data.map((e) => Party.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint("Error fetching parties from DB (companyId: $companyId): $e");
+      // Fallback: If query with companyId failed (e.g. column doesn't exist yet),
+      // fallback to fetching all parties to keep the app working.
+      if (companyId != null) {
+        return getParties(null);
+      }
+      return [];
+    }
   }
 
   Future<void> addParty(Party party) async {
@@ -36,14 +75,19 @@ class DataService {
   // --- Payments ---
 
   Future<List<Payment>> getPaymentsForParty(String partyId) async {
-    final response = await _client
-        .from(AppConstants.tblPayments)
-        .select()
-        .eq('party_id', partyId)
-        .order('date', ascending: false);
+    try {
+      final response = await _client
+          .from(AppConstants.tblPayments)
+          .select()
+          .eq('party_id', partyId)
+          .order('date', ascending: false);
 
-    final data = response as List<dynamic>;
-    return data.map((e) => Payment.fromJson(e)).toList();
+      final data = response as List<dynamic>;
+      return data.map((e) => Payment.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint("Error fetching payments for party: $e");
+      return [];
+    }
   }
   
   // Get payments for a specific date (for Daily View)
@@ -55,14 +99,19 @@ class DataService {
   }
 
   Future<List<Payment>> getPaymentsInRange(DateTime start, DateTime end) async {
-    final response = await _client
-        .from(AppConstants.tblPayments)
-        .select()
-        .gte('date', start.toIso8601String())
-        .lte('date', end.toIso8601String());
+    try {
+      final response = await _client
+          .from(AppConstants.tblPayments)
+          .select()
+          .gte('date', start.toIso8601String())
+          .lte('date', end.toIso8601String());
 
-    final data = response as List<dynamic>;
-    return data.map((e) => Payment.fromJson(e)).toList();
+      final data = response as List<dynamic>;
+      return data.map((e) => Payment.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint("Error fetching payments in range: $e");
+      return [];
+    }
   }
 
   Future<void> addPayment(Payment payment) async {
@@ -79,17 +128,19 @@ class DataService {
   // Note: For large datasets, use a database view or RPC.
   // For MVP, simplistic fetch and aggregate.
   Future<Map<String, double>> getAllPartyPaidAmounts() async {
-    // We can use Supabase .rpc or just fetch and group.
-    // Fetching all payments columns might be huge. Just fetch stats?
-    // Let's create a view in SQL later. For now, assuming relatively small data, fetch minimal columns.
-    final response = await _client.from(AppConstants.tblPayments).select('party_id, amount_paid');
-    
-    final Map<String, double> totals = {};
-    for (var row in response as List<dynamic>) {
-      final pid = row['party_id'] as String;
-      final amt = (row['amount_paid'] as num).toDouble();
-      totals[pid] = (totals[pid] ?? 0) + amt;
+    try {
+      final response = await _client.from(AppConstants.tblPayments).select('party_id, amount_paid');
+      
+      final Map<String, double> totals = {};
+      for (var row in response as List<dynamic>) {
+        final pid = row['party_id'] as String;
+        final amt = (row['amount_paid'] as num).toDouble();
+        totals[pid] = (totals[pid] ?? 0) + amt;
+      }
+      return totals;
+    } catch (e) {
+      debugPrint("Error getting all party paid amounts: $e");
+      return {};
     }
-    return totals;
   }
 }

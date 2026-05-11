@@ -61,6 +61,7 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
 
       if (widget.party == null) {
         // Create
+        final provider = Provider.of<FinanceProvider>(context, listen: false);
         final party = Party.create(
           name: name,
           principal: principal,
@@ -69,12 +70,14 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
           collectionType: _collectionType,
           paymentType: _paymentType,
           startDate: _startDate,
+          companyId: provider.currentCompany?.id,
         );
-        await Provider.of<FinanceProvider>(context, listen: false).addParty(party);
+        await provider.addParty(party);
       } else {
         // Update
         final updatedParty = Party(
           id: widget.party!.id,
+          companyId: widget.party!.companyId,
           name: name,
           principal: principal,
           interestPercent: interest,

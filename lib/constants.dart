@@ -4,4 +4,5 @@ class AppConstants {
   
   static const String tblParties = 'parties';
   static const String tblPayments = 'payments';
+  static const String tblCompanies = 'companies';
 }

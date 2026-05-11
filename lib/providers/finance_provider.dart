@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/company.dart';
 import '../models/party.dart';
 import '../models/payment.dart';
 import '../services/data_service.dart';
@@ -6,12 +7,16 @@ import '../services/data_service.dart';
 class FinanceProvider with ChangeNotifier {
   final DataService _dataService = DataService();
 
+  List<Company> _companies = [];
+  Company? _currentCompany;
   List<Party> _parties = [];
   List<Payment> _todayPayments = [];
   bool _isLoading = false;
 
   Map<String, double> _partyPaidAmounts = {};
 
+  List<Company> get companies => _companies;
+  Company? get currentCompany => _currentCompany;
   List<Party> get parties => _parties;
   List<Payment> get todayPayments => _todayPayments;
   bool get isLoading => _isLoading;
@@ -45,13 +50,64 @@ class FinanceProvider with ChangeNotifier {
 
   // --- Actions ---
 
+  Future<void> fetchCompanies() async {
+    try {
+      _companies = await _dataService.getCompanies();
+      if (_companies.isEmpty) {
+        final defaultCompany = Company.create(name: "Default Company");
+        await _dataService.addCompany(defaultCompany);
+        _companies = [defaultCompany];
+      }
+      if (_companies.isNotEmpty) {
+        _currentCompany ??= _companies.first;
+      }
+    } catch (e) {
+      debugPrint("Error fetching companies: $e");
+    }
+  }
+
+  Future<void> selectCompany(Company company) async {
+    _currentCompany = company;
+    notifyListeners();
+    await fetchDashboardData();
+  }
+
+  Future<void> createCompany(String name) async {
+    final company = Company.create(name: name);
+    await _dataService.addCompany(company);
+    _companies.add(company);
+    _currentCompany = company;
+    notifyListeners();
+    await fetchDashboardData();
+  }
+
+  Future<void> updateCompany(Company updatedCompany) async {
+    await _dataService.updateCompany(updatedCompany);
+    final index = _companies.indexWhere((c) => c.id == updatedCompany.id);
+    if (index != -1) {
+      _companies[index] = updatedCompany;
+      if (_currentCompany?.id == updatedCompany.id) {
+        _currentCompany = updatedCompany;
+      }
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchDashboardData() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      _parties = await _dataService.getParties();
-      _todayPayments = await _dataService.getPaymentsByDate(DateTime.now());
+      if (_companies.isEmpty) {
+        await fetchCompanies();
+      }
+
+      _parties = await _dataService.getParties(_currentCompany?.id);
+      
+      final partyIds = _parties.map((p) => p.id).toSet();
+      final allTodayPayments = await _dataService.getPaymentsByDate(DateTime.now());
+      _todayPayments = allTodayPayments.where((p) => partyIds.contains(p.partyId)).toList();
+
       await _fetchAllBalances();
     } catch (e) {
       debugPrint("Error fetching dashboard data: $e");
@@ -62,15 +118,12 @@ class FinanceProvider with ChangeNotifier {
   }
 
   Future<void> _fetchAllBalances() async {
-    // For MVP, we might fetch all payments or use a DB view. 
-    // Fetching all payments for all parties might be heavy.
-    // Let's implement a 'getBalances' in DataService that uses a Postgres function or grouping.
-    // For now, falling back to a simpler approach: 
-    // If parties < 100, we can fetch all payments? Or just assume we lazy load?
-    // Let's add a method in DataService to get total paid per party.
     try {
       final balances = await _dataService.getAllPartyPaidAmounts();
-      _partyPaidAmounts = balances;
+      final partyIds = _parties.map((p) => p.id).toSet();
+      _partyPaidAmounts = Map.fromEntries(
+        balances.entries.where((entry) => partyIds.contains(entry.key)),
+      );
     } catch (e) {
       debugPrint("Error fetching balances: $e");
     }
