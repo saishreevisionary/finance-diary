@@ -4,6 +4,7 @@ import '../constants.dart';
 import '../models/company.dart';
 import '../models/party.dart';
 import '../models/payment.dart';
+import '../models/investment.dart';
 
 class DataService {
   static final DataService _instance = DataService._internal();
@@ -142,5 +143,40 @@ class DataService {
       debugPrint("Error getting all party paid amounts: $e");
       return {};
     }
+  }
+
+  // --- Investments ---
+
+  Future<List<Investment>> getInvestments([String? companyId]) async {
+    try {
+      var query = _client.from(AppConstants.tblInvestments).select();
+      if (companyId != null) {
+        query = query.eq('company_id', companyId);
+      }
+      final response = await query.order('created_at', ascending: false);
+      final data = response as List<dynamic>;
+      return data.map((e) => Investment.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint("Error fetching investments: $e");
+      if (companyId != null) {
+        return getInvestments(null);
+      }
+      return [];
+    }
+  }
+
+  Future<void> addInvestment(Investment investment) async {
+    await _client.from(AppConstants.tblInvestments).insert(investment.toJson());
+  }
+
+  Future<void> updateInvestment(Investment investment) async {
+    await _client
+        .from(AppConstants.tblInvestments)
+        .update(investment.toJson())
+        .eq('id', investment.id);
+  }
+
+  Future<void> deleteInvestment(String id) async {
+    await _client.from(AppConstants.tblInvestments).delete().eq('id', id);
   }
 }

@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/finance_provider.dart';
 import '../models/company.dart';
 import '../widgets/stat_card.dart';
+import 'loan_statement_screen.dart';
 import 'party_list_screen.dart';
+import 'investments_screen.dart';
 
 class DashboardOverview extends StatefulWidget {
   const DashboardOverview({super.key});
@@ -132,7 +134,71 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                 const SizedBox(height: 24),
                 // Hero Card for Total Given
                 _buildHeroCard(context, provider, currencyFormat),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                
+                // EXCEL LOAN STATEMENT BANNER CARD
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanStatementScreen()));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade400.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.table_chart_rounded, color: Colors.amber, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "P.D. Loan Statement Grid",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Full Excel weekly matrix view, Main Balance & Debt-U status.",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.amber, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
                 Text(
                   "Quick Stats",
                   style: GoogleFonts.outfit(
@@ -197,6 +263,68 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                // Investment Banner
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const InvestmentsScreen()));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0D9488).withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.savings_rounded, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Investments Capital",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Capital: ${currencyFormat.format(provider.totalInvestmentAmount)} | Owed: ${currencyFormat.format(provider.totalInvestmentBalance)}",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.teal.shade100,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 import '../models/party.dart';
 import '../models/payment.dart';
 import '../services/data_service.dart';
@@ -18,6 +19,13 @@ class _PartyDetailsScreenState extends State<PartyDetailsScreen> {
   List<Payment> _payments = [];
   bool _isLoading = true;
   double _totalPaid = 0;
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await launcher.canLaunchUrl(launchUri)) {
+      await launcher.launchUrl(launchUri);
+    }
+  }
 
   @override
   void initState() {
@@ -100,14 +108,55 @@ class _PartyDetailsScreenState extends State<PartyDetailsScreen> {
                     ),
                     child: Column(
                       children: [
+                        if (party.mobileNo != null && party.mobileNo!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Mobile", style: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+                                InkWell(
+                                  onTap: () => _makePhoneCall(party.mobileNo!),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.phone, size: 16, color: Colors.green),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        party.mobileNo!,
+                                        style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green.shade700, decoration: TextDecoration.underline),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         _row("Principal", currencyFormatFull.format(party.principal)),
                         _row("Interest", "${party.interestPercent}%"),
+                        if (party.bima > 0)
+                          _row("BIMA / Insurance", "₹${party.bima.toInt()}", color: Colors.amber.shade900, isBold: true),
                         _row("Type", party.paymentType.name.toUpperCase()),
                         if (party.paymentType == PaymentType.due) ...[
                           _row("No of Due", party.numberOfDues?.toString() ?? 'N/A'),
+                          _row("Inst + BIMA (GT)", "₹${party.gtPerPeriod.toInt()}", color: const Color(0xFF4F46E5), isBold: true),
                           _row("Pending Dues", "${(balance / (party.duePerPeriod > 0 ? party.duePerPeriod : 1)).ceil()}", color: const Color(0xFFF59E0B)),
                         ],
                         _row("Collection", party.collectionType.name.toUpperCase()),
+                        if (party.isDebtU)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Debt Status", style: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.red.shade100, borderRadius: BorderRadius.circular(12)),
+                                  child: Text("DEBT-U (DEFAULTER)", style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade800, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ),
                         const SizedBox(height: 8),
                         _row("Total Payable", currencyFormatFull.format(totalPayable), isBold: true, fontSize: 18, color: const Color(0xFF1F2937)),
                         const Padding(

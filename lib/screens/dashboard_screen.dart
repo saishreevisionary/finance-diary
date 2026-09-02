@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/finance_provider.dart';
-import 'add_party_screen.dart';
 import 'daily_collection_screen.dart';
+import 'loan_statement_screen.dart';
 import 'party_list_screen.dart';
 import 'payment_history_screen.dart';
 import 'dashboard_overview.dart';
 import 'reports_screen.dart';
+import 'investments_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,31 +21,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   String _title = "Finance Diary";
 
-  // Using a map or list to manage screens and their titles
-  final List<Widget> _screens = [
-    const DashboardOverview(),
-    const PartyListScreen(), // Note: PartyListScreen has its own Scaffold. Use with care or refactor.
-    const DailyCollectionScreen(),
-    const PaymentHistoryScreen(),
-    const ReportsScreen(),
-  ];
-  
-  // Refactoring child screens to NOT be Scaffolds if used in a Shell?
-  // Current implementations of Screens (PartyList, DailyCollection, etc.) return Scaffold.
-  // If we nest Scaffolds, it's okay but we might get double AppBars if not careful.
-  // STRATEGY: 
-  // We will use the Drawer Model where selecting an item PUSHES the route. 
-  // This allows each screen to be independent and have back buttons if needed, 
-  // OR we give every screen the same Drawer.
-  //
-  // BUT: "Go with menu" usually implies a central navigation hub.
-  // Let's implement the "Shell" approach but we must remove Scaffolds from children OR hide the shell AppBar.
-  // 
-  // SIMPLER APPROACH for this specific user request:
-  // Return to a single Dashboard Home that has the Drawer. 
-  // Clicking an item in Drawer Pushes the new screen.
-  // This is standard navigation.
-  
   @override
   void initState() {
     super.initState();
@@ -185,6 +161,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onTap: () => Navigator.pop(context),
                   ),
                   _drawerItem(
+                    title: "Loan Statement (Excel Grid)",
+                    icon: Icons.table_chart_rounded,
+                    iconColor: const Color(0xFF7C3AED), // Purple
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanStatementScreen()));
+                    },
+                  ),
+                  _drawerItem(
                     title: "All Parties",
                     icon: Icons.people_alt_rounded,
                     iconColor: const Color(0xFF10B981), // Emerald Green
@@ -209,6 +194,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen()));
+                    },
+                  ),
+                  _drawerItem(
+                    title: "Investments",
+                    icon: Icons.savings_rounded,
+                    iconColor: const Color(0xFF0D9488), // Teal
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const InvestmentsScreen()));
                     },
                   ),
                   const Padding(

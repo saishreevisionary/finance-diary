@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/party.dart';
-import '../models/payment.dart';
 import '../providers/finance_provider.dart';
 import '../services/pdf_service.dart';
 import '../services/data_service.dart';
@@ -199,6 +198,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Text("Generate Reports", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w500, color: const Color(0xFF1F2937))),
               const SizedBox(height: 16),
               
+              _reportButton(
+                title: "P.D. Loan Statement Matrix PDF",
+                subtitle: "Full Excel landscape table with weekly columns & totals",
+                icon: Icons.table_chart_rounded,
+                iconBgColor: const Color(0xFFF3E8FF),
+                iconColor: const Color(0xFF7C3AED),
+                isLoading: _isLoading,
+                onTap: () async {
+                  setState(() => _isLoading = true);
+                  final payments = await DataService().getPaymentsInRange(
+                    DateTime(2020), 
+                    DateTime.now().add(const Duration(days: 1)),
+                  );
+                  Map<String, double> paidAmounts = {};
+                  for (var p in provider.parties) {
+                    paidAmounts[p.id] = provider.getPaidAmount(p.id);
+                  }
+                  await PdfService.generateLoanStatementGridReport(provider.parties, payments, paidAmounts);
+                  setState(() => _isLoading = false);
+                },
+              ),
+              const SizedBox(height: 16),
               _reportButton(
                 title: "Payment Summary PDF",
                 subtitle: "History within selected period & types",

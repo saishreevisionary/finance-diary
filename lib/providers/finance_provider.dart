@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/company.dart';
 import '../models/party.dart';
 import '../models/payment.dart';
+import '../models/investment.dart';
 import '../services/data_service.dart';
 
 class FinanceProvider with ChangeNotifier {
@@ -11,6 +12,7 @@ class FinanceProvider with ChangeNotifier {
   Company? _currentCompany;
   List<Party> _parties = [];
   List<Payment> _todayPayments = [];
+  List<Investment> _investments = [];
   bool _isLoading = false;
 
   Map<String, double> _partyPaidAmounts = {};
@@ -19,6 +21,7 @@ class FinanceProvider with ChangeNotifier {
   Company? get currentCompany => _currentCompany;
   List<Party> get parties => _parties;
   List<Payment> get todayPayments => _todayPayments;
+  List<Investment> get investments => _investments;
   bool get isLoading => _isLoading;
   
   double getPaidAmount(String partyId) => _partyPaidAmounts[partyId] ?? 0.0;
@@ -47,6 +50,12 @@ class FinanceProvider with ChangeNotifier {
     final dailyParties = _parties.where((p) => p.collectionType == CollectionType.daily);
     return dailyParties.where((p) => !paidPartyIds.contains(p.id)).length;
   }
+
+  // --- Investment Stats ---
+
+  double get totalInvestmentAmount => _investments.fold(0.0, (sum, i) => sum + i.amountInvested);
+  double get totalInvestmentBalance => _investments.fold(0.0, (sum, i) => sum + i.balance);
+  double get totalInvestmentReturned => _investments.fold(0.0, (sum, i) => sum + i.amountReturned);
 
   // --- Actions ---
 
@@ -103,6 +112,7 @@ class FinanceProvider with ChangeNotifier {
       }
 
       _parties = await _dataService.getParties(_currentCompany?.id);
+      _investments = await _dataService.getInvestments(_currentCompany?.id);
       
       final partyIds = _parties.map((p) => p.id).toSet();
       final allTodayPayments = await _dataService.getPaymentsByDate(DateTime.now());
@@ -150,5 +160,27 @@ class FinanceProvider with ChangeNotifier {
     final currentPaid = _partyPaidAmounts[payment.partyId] ?? 0.0;
     _partyPaidAmounts[payment.partyId] = currentPaid + payment.amountPaid;
     notifyListeners();
+  }
+
+  // --- Investment Actions ---
+
+  Future<void> fetchInvestments() async {
+    _investments = await _dataService.getInvestments(_currentCompany?.id);
+    notifyListeners();
+  }
+
+  Future<void> addInvestment(Investment investment) async {
+    await _dataService.addInvestment(investment);
+    await fetchInvestments();
+  }
+
+  Future<void> updateInvestment(Investment investment) async {
+    await _dataService.updateInvestment(investment);
+    await fetchInvestments();
+  }
+
+  Future<void> deleteInvestment(String id) async {
+    await _dataService.deleteInvestment(id);
+    await fetchInvestments();
   }
 }

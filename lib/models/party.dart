@@ -7,8 +7,11 @@ class Party {
   final String id;
   final String? companyId;
   final String name;
+  final String? mobileNo;
   final double principal;
   final double interestPercent;
+  final double bima;
+  final bool isDebtU;
   final int? durationDays; // Keeping for legacy or general duration notes
   final CollectionType collectionType;
   final PaymentType paymentType;
@@ -24,8 +27,11 @@ class Party {
     required this.id,
     this.companyId,
     required this.name,
+    this.mobileNo,
     required this.principal,
     required this.interestPercent,
+    this.bima = 0.0,
+    this.isDebtU = false,
     this.durationDays,
     required this.collectionType,
     required this.paymentType,
@@ -36,8 +42,11 @@ class Party {
 
   factory Party.create({
     required String name,
+    String? mobileNo,
     required double principal,
     required double interestPercent,
+    double bima = 0.0,
+    bool isDebtU = false,
     required CollectionType collectionType,
     required PaymentType paymentType,
     int? numberOfDues,
@@ -49,8 +58,11 @@ class Party {
       id: const Uuid().v4(),
       companyId: companyId,
       name: name,
+      mobileNo: mobileNo,
       principal: principal,
       interestPercent: interestPercent,
+      bima: bima,
+      isDebtU: isDebtU,
       collectionType: collectionType,
       paymentType: paymentType,
       numberOfDues: numberOfDues,
@@ -89,13 +101,18 @@ class Party {
     return _cachedDuePerPeriod!;
   }
 
+  double get gtPerPeriod => duePerPeriod + bima;
+
   factory Party.fromJson(Map<String, dynamic> json) {
     return Party(
       id: json['id'],
       companyId: json['company_id'],
       name: json['name'],
+      mobileNo: json['mobile_no'],
       principal: (json['principal'] as num).toDouble(),
       interestPercent: (json['interest_percent'] as num).toDouble(),
+      bima: json['bima'] != null ? (json['bima'] as num).toDouble() : 0.0,
+      isDebtU: json['is_debt_u'] ?? false,
       durationDays: json['duration'],
       numberOfDues: json['number_of_dues'],
       paymentType: PaymentType.values.firstWhere(
@@ -114,8 +131,11 @@ class Party {
       'id': id,
       'company_id': companyId,
       'name': name,
+      'mobile_no': mobileNo,
       'principal': principal,
       'interest_percent': interestPercent,
+      'bima': bima,
+      'is_debt_u': isDebtU,
       'duration': durationDays ?? 0,
       'number_of_dues': numberOfDues,
       'payment_type': paymentType.name,

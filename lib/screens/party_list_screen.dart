@@ -157,6 +157,24 @@ class PartyListScreen extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
+                                      if (party.isDebtU)
+                                        Container(
+                                          margin: const EdgeInsets.only(right: 6),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade100,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            "DEBT-U",
+                                            style: GoogleFonts.inter(
+                                              fontSize: 9,
+                                              color: Colors.red.shade800,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
@@ -175,6 +193,19 @@ class PartyListScreen extends StatelessWidget {
                                       ),
                                     ],
                                   ),
+                                  if (party.mobileNo != null && party.mobileNo!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.phone, size: 12, color: Colors.green),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          party.mobileNo!,
+                                          style: GoogleFonts.inter(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                   const SizedBox(height: 10),
                                   Row(
                                     children: [
@@ -195,6 +226,25 @@ class PartyListScreen extends StatelessWidget {
                                           ),
                                         ),
                                       ),
+                                      if (party.bima > 0) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Colors.amber.shade50,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.amber.shade200),
+                                          ),
+                                          child: Text(
+                                            "BIMA: ₹${party.bima.toInt()}",
+                                            style: GoogleFonts.inter(
+                                              fontSize: 10,
+                                              color: Colors.amber.shade900,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(

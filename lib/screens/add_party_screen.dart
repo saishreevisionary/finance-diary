@@ -15,13 +15,16 @@ class AddPartyScreen extends StatefulWidget {
 class _AddPartyScreenState extends State<AddPartyScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _mobileController;
   late TextEditingController _principalController;
   late TextEditingController _interestController;
+  late TextEditingController _bimaController;
   late TextEditingController _numberOfDuesController;
   
   late CollectionType _collectionType;
   late PaymentType _paymentType;
   late DateTime _startDate;
+  bool _isDebtU = false;
   bool _isLoading = false;
 
   @override
@@ -29,19 +32,24 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
     super.initState();
     final p = widget.party;
     _nameController = TextEditingController(text: p?.name ?? '');
+    _mobileController = TextEditingController(text: p?.mobileNo ?? '');
     _principalController = TextEditingController(text: p?.principal.toString() ?? '');
     _interestController = TextEditingController(text: p?.interestPercent.toString() ?? '');
+    _bimaController = TextEditingController(text: p?.bima.toString() ?? '0');
     _numberOfDuesController = TextEditingController(text: p?.numberOfDues?.toString() ?? '');
-    _collectionType = p?.collectionType ?? CollectionType.daily;
+    _collectionType = p?.collectionType ?? CollectionType.weekly;
     _paymentType = p?.paymentType ?? PaymentType.due;
     _startDate = p?.startDate ?? DateTime.now();
+    _isDebtU = p?.isDebtU ?? false;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _mobileController.dispose();
     _principalController.dispose();
     _interestController.dispose();
+    _bimaController.dispose();
     _numberOfDuesController.dispose();
     super.dispose();
   }
@@ -53,8 +61,10 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
 
     try {
       final name = _nameController.text.trim();
+      final mobileNo = _mobileController.text.trim().isEmpty ? null : _mobileController.text.trim();
       final principal = double.parse(_principalController.text);
       final interest = double.parse(_interestController.text);
+      final bima = double.tryParse(_bimaController.text) ?? 0.0;
       final numberOfDues = _paymentType == PaymentType.due 
           ? int.tryParse(_numberOfDuesController.text) 
           : null;
@@ -64,8 +74,11 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
         final provider = Provider.of<FinanceProvider>(context, listen: false);
         final party = Party.create(
           name: name,
+          mobileNo: mobileNo,
           principal: principal,
           interestPercent: interest,
+          bima: bima,
+          isDebtU: _isDebtU,
           numberOfDues: numberOfDues,
           collectionType: _collectionType,
           paymentType: _paymentType,
@@ -79,8 +92,11 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
           id: widget.party!.id,
           companyId: widget.party!.companyId,
           name: name,
+          mobileNo: mobileNo,
           principal: principal,
           interestPercent: interest,
+          bima: bima,
+          isDebtU: _isDebtU,
           numberOfDues: numberOfDues,
           collectionType: _collectionType,
           paymentType: _paymentType,
@@ -121,22 +137,50 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Party Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Party Name',
+                  prefixIcon: Icon(Icons.person),
+                ),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: _mobileController,
+                decoration: const InputDecoration(
+                  labelText: 'Mobile Number (Optional)',
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _principalController,
-                decoration: const InputDecoration(labelText: 'Principal Amount'),
+                decoration: const InputDecoration(
+                  labelText: 'Principal Amount (₹)',
+                  prefixIcon: Icon(Icons.currency_rupee),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _interestController,
-                decoration: const InputDecoration(labelText: 'Interest Percentage (%)'),
+                decoration: const InputDecoration(
+                  labelText: 'Interest Percentage (%)',
+                  prefixIcon: Icon(Icons.percent),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _bimaController,
+                decoration: const InputDecoration(
+                  labelText: 'BIMA / Insurance Amount (₹)',
+                  prefixIcon: Icon(Icons.security),
+                  hintText: 'e.g. 100',
+                ),
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<PaymentType>(
@@ -158,14 +202,14 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: TextFormField(
                     controller: _numberOfDuesController,
-                    decoration: const InputDecoration(labelText: 'No of Due'),
+                    decoration: const InputDecoration(labelText: 'No of Due (Weeks/Months)'),
                     keyboardType: TextInputType.number,
                     validator: (v) => _paymentType == PaymentType.due && (v == null || v.isEmpty) ? 'Required' : null,
                   ),
                 ),
               DropdownButtonFormField<CollectionType>(
                 value: _collectionType,
-                decoration: const InputDecoration(labelText: 'Collection Type'),
+                decoration: const InputDecoration(labelText: 'Collection Frequency'),
                 items: CollectionType.values.map((type) {
                   return DropdownMenuItem(
                     value: type,
@@ -177,6 +221,14 @@ class _AddPartyScreenState extends State<AddPartyScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text("Debt-U Status (Defaulter / Special Flag)"),
+                subtitle: const Text("Mark if borrower has overdue debt status"),
+                value: _isDebtU,
+                activeColor: Colors.red,
+                onChanged: (val) => setState(() => _isDebtU = val),
+              ),
+              const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text("Start Date"),
